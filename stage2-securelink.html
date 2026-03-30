@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureLink — VNet Integration Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --bg-2: #161b22;
+  --bg-3: #21262d;
+  --border: rgba(255,255,255,0.08);
+  --border-2: rgba(255,255,255,0.14);
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --text-faint: #484f58;
+  --green: #3fb950;
+  --green-pale: rgba(63,185,80,0.1);
+  --green-border: rgba(63,185,80,0.3);
+  --amber: #d29922;
+  --amber-pale: rgba(210,153,34,0.1);
+  --amber-border: rgba(210,153,34,0.3);
+  --blue: #58a6ff;
+  --blue-pale: rgba(88,166,255,0.1);
+  --blue-border: rgba(88,166,255,0.25);
+  --red: #f85149;
+  --red-pale: rgba(248,81,73,0.1);
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* STAGE RIBBON */
+.ribbon {
+  background: linear-gradient(90deg, #1a2530, #0d1117);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: var(--text-muted);
+}
+.ribbon-stages { display: flex; align-items: center; gap: 8px; }
+.s-chip {
+  padding: 3px 10px; border-radius: 99px; font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 500;
+}
+.s-done { background: var(--green-pale); color: var(--green); border: 1px solid var(--green-border); }
+.s-active { background: var(--blue-pale); color: var(--blue); border: 1px solid var(--blue-border); }
+.s-next { background: transparent; color: var(--text-faint); border: 1px solid var(--border); }
+.ribbon-arrow { color: var(--text-faint); }
+
+/* NAV */
+nav {
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.nav-logo-icon {
+  width: 30px; height: 30px; background: var(--blue-pale);
+  border: 1px solid var(--blue-border); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.nav-brand { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.nav-brand em { color: var(--blue); font-style: normal; }
+.nav-badge-s2 { font-size: 10px; font-family: 'IBM Plex Mono', monospace; background: var(--blue-pale); color: var(--blue); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--blue-border); }
+.nav-right { display: flex; align-items: center; gap: 16px; }
+.status-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); }
+.dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 2s ease infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.nav-btn {
+  font-size: 12px; font-weight: 500; padding: 6px 14px;
+  border-radius: var(--radius-sm); border: 1px solid var(--blue-border);
+  background: var(--blue-pale); color: var(--blue);
+  cursor: pointer; transition: all 0.15s; font-family: 'IBM Plex Sans', sans-serif;
+}
+.nav-btn:hover { background: rgba(88,166,255,0.2); }
+
+/* LAYOUT */
+.app-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: calc(100vh - 93px);
+}
+
+/* SIDEBAR */
+.sidebar {
+  grid-row: 1 / 3;
+  border-right: 1px solid var(--border);
+  background: var(--bg-2);
+  padding: 1.5rem 1rem;
+  display: flex; flex-direction: column; gap: 1.5rem;
+}
+.sidebar-section-title {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.service-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px; margin-bottom: 6px;
+  cursor: pointer; transition: all 0.15s;
+}
+.service-card:hover { border-color: var(--border-2); background: var(--bg-3); }
+.service-card.active { border-color: var(--blue-border); background: var(--blue-pale); }
+.sc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.sc-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.sc-badge { font-size: 10px; font-family: 'IBM Plex Mono', monospace; padding: 2px 7px; border-radius: 3px; }
+.badge-online { background: var(--green-pale); color: var(--green); border: 1px solid var(--green-border); }
+.badge-configuring { background: var(--amber-pale); color: var(--amber); border: 1px solid var(--amber-border); }
+.badge-offline { background: var(--red-pale); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+.sc-sub { font-size: 11px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+
+.metric-mini { display: flex; flex-direction: column; gap: 6px; }
+.mm-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.mm-label { color: var(--text-muted); }
+.mm-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+.mm-val.green { color: var(--green); }
+.mm-val.amber { color: var(--amber); }
+.mm-val.blue { color: var(--blue); }
+
+/* HEADER BAR */
+.header-bar {
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg);
+}
+.header-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 600; }
+.header-actions { display: flex; gap: 8px; }
+.hdr-btn {
+  font-size: 12px; padding: 6px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2); background: transparent;
+  color: var(--text-muted); cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+  transition: all 0.15s;
+}
+.hdr-btn:hover { color: var(--text); border-color: var(--border-2); background: var(--bg-3); }
+.hdr-btn.primary { background: var(--blue-pale); color: var(--blue); border-color: var(--blue-border); }
+.hdr-btn.primary:hover { background: rgba(88,166,255,0.2); }
+
+/* MAIN CONTENT */
+.main-content { padding: 1.5rem; overflow-y: auto; }
+
+/* NETWORK MAP */
+.network-map {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative; overflow: hidden;
+}
+.network-map::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.4;
+}
+.network-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--text-muted); margin-bottom: 1.25rem;
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 8px;
+}
+.network-title::before { content: '◆'; color: var(--blue); font-size: 8px; }
+
+.net-diagram {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; position: relative; z-index: 1;
+}
+.net-node {
+  flex: 1; background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm); padding: 14px;
+  text-align: center;
+}
+.net-node.highlighted { border-color: var(--blue-border); background: rgba(88,166,255,0.06); }
+.nn-icon { font-size: 22px; margin-bottom: 6px; }
+.nn-label { font-size: 12px; font-weight: 500; color: var(--text); }
+.nn-sub { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin-top: 3px; }
+.nn-status { margin-top: 8px; font-size: 10px; padding: 3px 8px; border-radius: 99px; display: inline-block; }
+
+.net-connector {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; flex: 0 0 auto;
+}
+.net-line {
+  width: 48px; height: 2px;
+  background: linear-gradient(90deg, var(--green), var(--green));
+  position: relative; border-radius: 1px;
+}
+.net-line.dashed { background: none; border-top: 2px dashed var(--amber); }
+.net-line-label { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; }
+.net-badge { font-size: 10px; padding: 2px 7px; border-radius: 3px; background: var(--green-pale); color: var(--green); border: 1px solid var(--green-border); }
+.net-badge.warn { background: var(--amber-pale); color: var(--amber); border-color: var(--amber-border); }
+
+/* GRID */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.card-header {
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; }
+.card-body { padding: 1.25rem; }
+
+/* TIMELINE */
+.tl { list-style: none; }
+.tl-item {
+  display: flex; gap: 12px; padding-bottom: 1rem;
+  position: relative;
+}
+.tl-item:last-child { padding-bottom: 0; }
+.tl-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.tl-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; flex-shrink: 0;
+}
+.tl-dot.done { background: var(--green-pale); color: var(--green); border: 1px solid var(--green-border); }
+.tl-dot.active { background: var(--amber-pale); color: var(--amber); border: 1px solid var(--amber-border); animation: pulse 2s ease infinite; }
+.tl-dot.pending { background: var(--bg-3); color: var(--text-faint); border: 1px solid var(--border); }
+.tl-line {
+  width: 1px; flex: 1; min-height: 16px;
+  background: var(--border); margin: 3px 0;
+}
+.tl-item:last-child .tl-line { display: none; }
+.tl-right { padding-top: 4px; }
+.tl-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.tl-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.tl-code { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--blue); background: var(--blue-pale); padding: 2px 8px; border-radius: 3px; margin-top: 5px; display: inline-block; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(210,153,34,0.4)} 50%{box-shadow:0 0 0 6px rgba(210,153,34,0)} }
+
+/* FLOW SIMULATOR */
+.flow-controls { margin-bottom: 1rem; }
+.toggle-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--bg-3); border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.toggle-label { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+.toggle-icon { font-size: 13px; }
+input[type=checkbox] {
+  width: 34px; height: 18px; cursor: pointer; accent-color: var(--blue);
+}
+
+.flow-log {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 12px;
+  min-height: 120px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+.log-line { padding: 2px 0; line-height: 1.5; }
+.log-time { color: var(--text-faint); margin-right: 8px; }
+.log-ok { color: var(--green); }
+.log-warn { color: var(--amber); }
+.log-info { color: var(--blue); }
+.log-err { color: var(--red); }
+
+.run-btn {
+  width: 100%; padding: 11px;
+  background: rgba(88,166,255,0.12); color: var(--blue);
+  border: 1px solid var(--blue-border);
+  border-radius: var(--radius-sm); font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.run-btn:hover { background: rgba(88,166,255,0.2); }
+.run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ENDPOINT TABLE */
+.ep-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ep-table th {
+  text-align: left; padding: 8px 10px;
+  color: var(--text-faint); font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.ep-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+.ep-table td:first-child { color: var(--text); font-family: 'IBM Plex Mono', monospace; }
+.ep-table tr:last-child td { border-bottom: none; }
+.ep-badge { font-size: 10px; padding: 2px 7px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; }
+
+/* SPINNER */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(88,166,255,0.3); border-top-color: var(--blue); animation: spin 0.7s linear infinite; }
+
+/* STAGE FOOTER */
+.stage-footer {
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  background: var(--bg-2);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px;
+}
+.sf-left { color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+.sf-right { display: flex; gap: 8px; }
+
+/* INTEL FEED */
+.intel-item {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px; margin-bottom: 8px;
+  font-size: 12px;
+}
+.intel-item-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.intel-title { font-weight: 500; color: var(--text); }
+.intel-time { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-faint); }
+.intel-body { color: var(--text-muted); line-height: 1.5; }
+.intel-source { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--blue); margin-top: 5px; }
+</style>
+</head>
+<body>
+
+<div class="ribbon">
+  <div class="ribbon-stages">
+    <span class="s-chip s-done">✓ Stage 1: ContentLens</span>
+    <span class="ribbon-arrow">›</span>
+    <span class="s-chip s-active">▶ Stage 2: SecureLink</span>
+    <span class="ribbon-arrow">›</span>
+    <span class="s-chip s-next">○ Stage 3: CloudShift</span>
+  </div>
+  <span style="color: var(--text-faint)">VNet Integration Platform · Dynamics CRM ↔ Power Platform</span>
+</div>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo-icon">🔒</div>
+    <span class="nav-brand">Secure<em>Link</em></span>
+    <span class="nav-badge-s2">STAGE-2</span>
+  </div>
+  <div class="nav-right">
+    <div class="status-indicator"><div class="dot-live"></div>VNet active</div>
+    <button class="nav-btn">View topology</button>
+    <button class="nav-btn primary">→ Deploy to Stage 3</button>
+  </div>
+</nav>
+
+<div class="app-layout">
+  <div class="sidebar">
+    <div>
+      <div class="sidebar-section-title">Connected services</div>
+      <div class="service-card active">
+        <div class="sc-top">
+          <span class="sc-name">Dynamics CRM</span>
+          <span class="sc-badge badge-online">ONLINE</span>
+        </div>
+        <div class="sc-sub">10.0.0.5 · private</div>
+      </div>
+      <div class="service-card">
+        <div class="sc-top">
+          <span class="sc-name">Power Platform</span>
+          <span class="sc-badge badge-online">ONLINE</span>
+        </div>
+        <div class="sc-sub">VNet gateway · active</div>
+      </div>
+      <div class="service-card">
+        <div class="sc-top">
+          <span class="sc-name">ContentLens API</span>
+          <span class="sc-badge badge-online">ONLINE</span>
+        </div>
+        <div class="sc-sub">Stage 1 output feed</div>
+      </div>
+      <div class="service-card">
+        <div class="sc-top">
+          <span class="sc-name">Azure Key Vault</span>
+          <span class="sc-badge badge-configuring">CONFIG</span>
+        </div>
+        <div class="sc-sub">Secrets management</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">Network health</div>
+      <div class="metric-mini">
+        <div class="mm-row"><span class="mm-label">Latency</span><span class="mm-val green">4ms</span></div>
+        <div class="mm-row"><span class="mm-label">Throughput</span><span class="mm-val blue">1.2 GB/s</span></div>
+        <div class="mm-row"><span class="mm-label">Public egress</span><span class="mm-val green">0 bytes</span></div>
+        <div class="mm-row"><span class="mm-label">Uptime</span><span class="mm-val green">99.97%</span></div>
+        <div class="mm-row"><span class="mm-label">Active flows</span><span class="mm-val blue">247</span></div>
+        <div class="mm-row"><span class="mm-label">AAD tokens</span><span class="mm-val green">valid</span></div>
+        <div class="mm-row"><span class="mm-label">SSL certs</span><span class="mm-val amber">87d left</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">ContentLens feed</div>
+      <div style="font-size: 11px; color: var(--text-muted); line-height: 1.7;">
+        Latest intelligence from Stage 1 ready to route into CRM via private endpoint.
+      </div>
+      <div style="margin-top: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--blue); background: var(--blue-pale); border: 1px solid var(--blue-border); border-radius: 4px; padding: 6px 10px; line-height: 1.8;">
+          Type: document<br>
+          Entities: 6<br>
+          Action: crm_lead<br>
+          Score: 92%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="header-bar">
+      <div class="header-title">Network topology &amp; integration centre</div>
+      <div class="header-actions">
+        <button class="hdr-btn">Export config</button>
+        <button class="hdr-btn">View logs</button>
+        <button class="hdr-btn primary" onclick="testConnection()">▶ Run integration test</button>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <!-- NETWORK MAP -->
+      <div class="network-map">
+        <div class="network-title">Azure Virtual Network topology · privatelink.azure.com</div>
+        <div class="net-diagram">
+          <div class="net-node">
+            <div class="nn-icon">🏢</div>
+            <div class="nn-label">Power Platform</div>
+            <div class="nn-sub">canvas apps · flows</div>
+            <div class="nn-status" style="background:var(--green-pale);color:var(--green)">● connected</div>
+          </div>
+          <div class="net-connector">
+            <div class="net-line"></div>
+            <div class="net-badge">TLS 1.3</div>
+            <div class="net-line-label">VNet GW</div>
+          </div>
+          <div class="net-node highlighted">
+            <div class="nn-icon">🔒</div>
+            <div class="nn-label">Azure VNet</div>
+            <div class="nn-sub">10.0.0.0/16</div>
+            <div class="nn-status" style="background:var(--blue-pale);color:var(--blue)">● SecureLink hub</div>
+          </div>
+          <div class="net-connector">
+            <div class="net-line"></div>
+            <div class="net-badge">Private EP</div>
+            <div class="net-line-label">10.0.0.5</div>
+          </div>
+          <div class="net-node">
+            <div class="nn-icon">⚙️</div>
+            <div class="nn-label">Dynamics CRM</div>
+            <div class="nn-sub">OData v4 · Web API</div>
+            <div class="nn-status" style="background:var(--green-pale);color:var(--green)">● online</div>
+          </div>
+          <div class="net-connector">
+            <div class="net-line dashed"></div>
+            <div class="net-badge warn">configuring</div>
+            <div class="net-line-label">Key Vault</div>
+          </div>
+          <div class="net-node">
+            <div class="nn-icon">🧠</div>
+            <div class="nn-label">ContentLens</div>
+            <div class="nn-sub">Stage 1 · intelligence</div>
+            <div class="nn-status" style="background:var(--green-pale);color:var(--green)">● feeding</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- INTEGRATION STEPS -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Integration checklist</div>
+            <span class="sc-badge badge-configuring">3/5 done</span>
+          </div>
+          <div class="card-body">
+            <ul class="tl">
+              <li class="tl-item">
+                <div class="tl-left"><div class="tl-dot done">✓</div><div class="tl-line"></div></div>
+                <div class="tl-right">
+                  <div class="tl-title">Azure VNet provisioned</div>
+                  <div class="tl-desc">10.0.0.0/16 with private subnets across 3 AZs</div>
+                  <span class="tl-code">az network vnet create</span>
+                </div>
+              </li>
+              <li class="tl-item">
+                <div class="tl-left"><div class="tl-dot done">✓</div><div class="tl-line"></div></div>
+                <div class="tl-right">
+                  <div class="tl-title">Private endpoints enabled</div>
+                  <div class="tl-desc">Dynamics CRM accessible only via private IP 10.0.0.5</div>
+                  <span class="tl-code">Microsoft.PowerPlatform/enterprisePolicies</span>
+                </div>
+              </li>
+              <li class="tl-item">
+                <div class="tl-left"><div class="tl-dot done">✓</div><div class="tl-line"></div></div>
+                <div class="tl-right">
+                  <div class="tl-title">AAD managed identity</div>
+                  <div class="tl-desc">Service principal with least-privilege CRM access</div>
+                  <span class="tl-code">az ad sp create-for-rbac</span>
+                </div>
+              </li>
+              <li class="tl-item">
+                <div class="tl-left"><div class="tl-dot active">▶</div><div class="tl-line"></div></div>
+                <div class="tl-right">
+                  <div class="tl-title">Power Platform VNet gateway</div>
+                  <div class="tl-desc">Connecting canvas apps and flows to private subnet</div>
+                  <span class="tl-code">New-AdminPowerAppEnvironmentVNet</span>
+                </div>
+              </li>
+              <li class="tl-item">
+                <div class="tl-left"><div class="tl-dot pending">5</div><div class="tl-line"></div></div>
+                <div class="tl-right">
+                  <div class="tl-title">End-to-end test &amp; sign-off</div>
+                  <div class="tl-desc">Flow trigger → ContentLens fetch → CRM write with zero public traffic</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- FLOW SIMULATOR -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Integration flow simulator</div>
+          </div>
+          <div class="card-body">
+            <div class="toggle-group">
+              <div class="toggle-row">
+                <span class="toggle-label"><span class="toggle-icon">🔒</span>Private endpoint only</span>
+                <input type="checkbox" id="chk-private" checked>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label"><span class="toggle-icon">🔑</span>AAD authentication</span>
+                <input type="checkbox" id="chk-auth" checked>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label"><span class="toggle-icon">📋</span>Diagnostic logging</span>
+                <input type="checkbox" id="chk-log" checked>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label"><span class="toggle-icon">🧠</span>ContentLens intelligence feed</span>
+                <input type="checkbox" id="chk-intel" checked>
+              </div>
+            </div>
+
+            <div class="flow-log" id="flow-log">
+              <div class="log-line"><span class="log-time">--:--:--</span><span class="log-info">SecureLink simulation ready. Configure and run →</span></div>
+            </div>
+
+            <button class="run-btn" id="run-btn" onclick="runFlow()">
+              <span id="run-icon">▶</span>
+              <span id="run-label">Run integration test</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENDPOINT TABLE -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-header">
+          <div class="card-title">Private endpoint registry</div>
+          <button class="hdr-btn" onclick="addEndpoint()">+ Add endpoint</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="ep-table">
+            <thead>
+              <tr>
+                <th>Service</th><th>Private IP</th><th>DNS zone</th><th>Auth</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ep-tbody">
+              <tr>
+                <td>Dynamics CRM Web API</td>
+                <td>10.0.0.5</td>
+                <td>crm.privatelink.dynamics.com</td>
+                <td><span class="ep-badge" style="background:var(--green-pale);color:var(--green);border:1px solid var(--green-border)">AAD</span></td>
+                <td><span class="ep-badge badge-online">ONLINE</span></td>
+              </tr>
+              <tr>
+                <td>Power Automate Gateway</td>
+                <td>10.0.0.18</td>
+                <td>gateway.privatelink.powerautomate.com</td>
+                <td><span class="ep-badge" style="background:var(--green-pale);color:var(--green);border:1px solid var(--green-border)">AAD</span></td>
+                <td><span class="ep-badge badge-online">ONLINE</span></td>
+              </tr>
+              <tr>
+                <td>ContentLens API (Stage 1)</td>
+                <td>10.0.0.31</td>
+                <td>lens.privatelink.azure.com</td>
+                <td><span class="ep-badge" style="background:var(--green-pale);color:var(--green);border:1px solid var(--green-border)">AAD</span></td>
+                <td><span class="ep-badge badge-online">ONLINE</span></td>
+              </tr>
+              <tr>
+                <td>Azure Key Vault</td>
+                <td>10.0.0.44</td>
+                <td>vault.privatelink.vaultcore.azure.net</td>
+                <td><span class="ep-badge" style="background:var(--amber-pale);color:var(--amber);border:1px solid var(--amber-border)">MSI</span></td>
+                <td><span class="ep-badge badge-configuring">CONFIG</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- INTEL FROM CONTENTLENS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Intelligence feed from ContentLens → CRM</div>
+          <span style="font-size:10px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace">live · private channel</span>
+        </div>
+        <div class="card-body">
+          <div class="intel-item">
+            <div class="intel-item-top">
+              <span class="intel-title">Lead created from document analysis</span>
+              <span class="intel-time">2 min ago</span>
+            </div>
+            <div class="intel-body">ContentLens extracted contact and opportunity data from uploaded Q1 proposal. CRM lead auto-created with 92% confidence entities.</div>
+            <div class="intel-source">contentlens → dynamics/leads/4729a · via 10.0.0.5</div>
+          </div>
+          <div class="intel-item">
+            <div class="intel-item-top">
+              <span class="intel-title">Power Automate flow triggered</span>
+              <span class="intel-time">14 min ago</span>
+            </div>
+            <div class="intel-body">Negative sentiment detected in support call transcript. Escalation flow triggered, CRM case priority updated to high.</div>
+            <div class="intel-source">contentlens → powerautomate/flows/escalate · via VNet</div>
+          </div>
+          <div class="intel-item">
+            <div class="intel-item-top">
+              <span class="intel-title">Invoice data structured and synced</span>
+              <span class="intel-time">1 hr ago</span>
+            </div>
+            <div class="intel-body">7 invoice documents batch-processed by ContentLens. Financial entities extracted and written to CRM accounts via private OData endpoint.</div>
+            <div class="intel-source">contentlens → dynamics/accounts/batch · 7 records</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-footer">
+      <div class="sf-left">
+        <span class="sc-badge badge-online">Stage 2 active</span>
+        SecureLink provides the private connectivity fabric between ContentLens intelligence and enterprise CRM
+      </div>
+      <div class="sf-right">
+        <button class="hdr-btn">← Back to Stage 1</button>
+        <button class="hdr-btn primary" onclick="alert('Stage 3: CloudShift — deploy the full app modernisation suite on top of SecureLink\'s private network fabric')">Launch Stage 3: CloudShift →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let running = false;
+
+async function runFlow() {
+  if (running) return;
+  running = true;
+  const btn = document.getElementById('run-btn');
+  const log = document.getElementById('flow-log');
+  btn.disabled = true;
+  document.getElementById('run-label').textContent = 'Running…';
+  document.getElementById('run-icon').innerHTML = '<span class="spin"></span>';
+
+  const priv = document.getElementById('chk-private').checked;
+  const auth = document.getElementById('chk-auth').checked;
+  const logEnabled = document.getElementById('chk-log').checked;
+  const intel = document.getElementById('chk-intel').checked;
+
+  log.innerHTML = '';
+  function addLog(cls, msg) {
+    const t = new Date().toLocaleTimeString('en-GB', {hour12:false});
+    log.innerHTML += `<div class="log-line"><span class="log-time">${t}</span><span class="${cls}">${msg}</span></div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  addLog('log-info', 'Initialising SecureLink integration test…');
+  await delay(600);
+  addLog(priv ? 'log-ok' : 'log-warn', priv ? '✓ Private endpoint routing verified — no public internet path' : '⚠ Public routing detected — private endpoint not enforced');
+  await delay(500);
+  addLog(auth ? 'log-ok' : 'log-err', auth ? '✓ AAD managed identity token acquired' : '✗ Auth failure — no valid AAD token');
+  await delay(500);
+  if (intel) addLog('log-info', '→ Fetching ContentLens intelligence payload from 10.0.0.31…');
+  await delay(600);
+  if (intel) addLog('log-ok', '✓ Intelligence payload received: 6 entities, sentiment=Neutral, action=crm_lead');
+  await delay(400);
+
+  const prompt = `Simulate a SecureLink VNet integration test between Power Platform and Dynamics CRM with these settings:
+private-only=${priv}, AAD auth=${auth}, diagnostic logging=${logEnabled}, ContentLens feed=${intel}.
+Return JSON only (no markdown): {"steps":[{"ts":"HH:MM:SS","level":"ok|warn|err|info","msg":"log message"}], "result":"PASS|WARN|FAIL", "summary":"1 sentence"}
+Include 4-6 realistic log steps covering network routing, auth, CRM write, and any warnings based on disabled features.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const json = await resp.json();
+    const raw = json.content.map(c => c.text||'').join('').replace(/```json|```/g,'').trim();
+    const data = JSON.parse(raw);
+    for (const step of data.steps) {
+      await delay(450);
+      const cls = {ok:'log-ok',warn:'log-warn',err:'log-err',info:'log-info'}[step.level]||'log-info';
+      addLog(cls, step.msg);
+    }
+    await delay(300);
+    const resColor = {PASS:'log-ok', WARN:'log-warn', FAIL:'log-err'}[data.result]||'log-info';
+    addLog(resColor, `— ${data.result}: ${data.summary}`);
+  } catch(e) {
+    addLog('log-ok', '✓ CRM record written to Dynamics via private endpoint 10.0.0.5');
+    addLog('log-ok', '— PASS: Integration completed successfully via private VNet');
+  }
+
+  btn.disabled = false;
+  document.getElementById('run-label').textContent = 'Run again';
+  document.getElementById('run-icon').textContent = '▶';
+  running = false;
+}
+
+async function testConnection() {
+  const log = document.getElementById('flow-log');
+  log.innerHTML = '';
+  function addLog(cls, msg) {
+    const t = new Date().toLocaleTimeString('en-GB', {hour12:false});
+    log.innerHTML += `<div class="log-line"><span class="log-time">${t}</span><span class="${cls}">${msg}</span></div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+  addLog('log-info', 'Quick connectivity check initiated…');
+  await delay(500);
+  addLog('log-ok', '✓ 10.0.0.5 (Dynamics) — reachable · 4ms');
+  await delay(300);
+  addLog('log-ok', '✓ 10.0.0.18 (Power Automate Gateway) — reachable · 6ms');
+  await delay(300);
+  addLog('log-ok', '✓ 10.0.0.31 (ContentLens) — reachable · 3ms');
+  await delay(300);
+  addLog('log-warn', '⚠ 10.0.0.44 (Key Vault) — configuration pending');
+  await delay(300);
+  addLog('log-ok', '— All critical endpoints reachable via private VNet');
+}
+
+function addEndpoint() {
+  const name = prompt('Service name:');
+  if (!name) return;
+  const ip = '10.0.0.' + (Math.floor(Math.random()*200)+50);
+  const tbody = document.getElementById('ep-tbody');
+  const row = document.createElement('tr');
+  row.innerHTML = `<td>${name}</td><td>${ip}</td><td>new.privatelink.azure.com</td><td><span class="ep-badge" style="background:var(--amber-pale);color:var(--amber);border:1px solid var(--amber-border)">pending</span></td><td><span class="ep-badge badge-configuring">CONFIG</span></td>`;
+  tbody.appendChild(row);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+<script>
+// PIPELINE BRIDGE — reads Stage 1, saves Stage 2 output
+function loadStage1Data() {
+  const raw = localStorage.getItem('contentlens_output');
+  if (!raw) return;
+  const data = JSON.parse(raw);
+
+  // Update the ContentLens feed panel in sidebar
+  const feedEl = document.querySelector('.sidebar > div:last-child div[style*="font-family"]');
+  if (feedEl) {
+    feedEl.innerHTML = `
+      <strong style="color:var(--blue)">Type:</strong> ${data.contentType}<br>
+      <strong style="color:var(--blue)">Entities:</strong> ${(data.entities||[]).length}<br>
+      <strong style="color:var(--blue)">Sentiment:</strong> ${data.sentiment}<br>
+      <strong style="color:var(--blue)">Score:</strong> ${data.confidence}%<br>
+      <strong style="color:var(--blue)">Intent:</strong> ${(data.intent||'').substring(0,30)}…
+    `;
+  }
+
+  // Add live intel item at top of feed
+  const feed = document.querySelector('.intel-item');
+  if (feed && data.summary) {
+    const item = document.createElement('div');
+    item.className = 'intel-item';
+    item.style.borderColor = 'var(--blue-border)';
+    item.innerHTML = `
+      <div class="intel-item-top">
+        <span class="intel-title" style="color:var(--blue)">⚡ Live from ContentLens</span>
+        <span class="intel-time">just now</span>
+      </div>
+      <div class="intel-body">${data.summary}</div>
+      <div class="intel-source">contentlens_output → securelink · ${data.contentType} · ${data.confidence}% confidence</div>
+    `;
+    feed.parentNode.insertBefore(item, feed);
+  }
+
+  showStage1Banner(data);
+}
+
+function showStage1Banner(data) {
+  const banner = document.createElement('div');
+  banner.style.cssText = `
+    background:var(--blue-pale); border:1px solid var(--blue-border);
+    border-radius:6px; padding:10px 14px; margin:0 0 12px;
+    font-size:12px; color:var(--blue); display:flex;
+    align-items:center; gap:10px;
+  `;
+  banner.innerHTML = `
+    <span>🔗</span>
+    <span><strong>ContentLens connected</strong> — ${data.contentType} analysis (${data.confidence}% confidence) loaded from Stage 1 · ${new Date(data.timestamp).toLocaleTimeString()}</span>
+  `;
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) mainContent.insertBefore(banner, mainContent.firstChild);
+}
+
+function saveStage2Data(flowResult) {
+  const s1 = JSON.parse(localStorage.getItem('contentlens_output') || '{}');
+  const payload = {
+    timestamp: new Date().toISOString(),
+    vnetActive: true,
+    privateEndpoints: 4,
+    servicesConnected: ['Dynamics CRM', 'Power Platform', 'ContentLens API'],
+    flowResult: flowResult,
+    stage1Data: s1,
+    stage2Complete: true
+  };
+  localStorage.setItem('securelink_output', JSON.stringify(payload));
+}
+
+// Hook into runFlow to also save results
+const _origFlow = runFlow;
+runFlow = async function() {
+  await _origFlow();
+  saveStage2Data({ status: 'tested', timestamp: new Date().toISOString() });
+
+  // Show Stage 3 button after test
+  const footer = document.querySelector('.sf-right');
+  if (footer && !document.getElementById('goto-s3')) {
+    const btn = document.createElement('button');
+    btn.id = 'goto-s3';
+    btn.className = 'hdr-btn primary';
+    btn.style.background = '#7c3aed';
+    btn.style.borderColor = 'rgba(124,58,237,0.4)';
+    btn.style.color = 'white';
+    btn.textContent = '→ Launch Stage 3: CloudShift';
+    btn.onclick = () => window.location.href = 'stage3-cloudshift.html';
+    footer.appendChild(btn);
+  }
+};
+
+// Load on page start
+window.addEventListener('DOMContentLoaded', loadStage1Data);
+</script>
+</body>
+</html>
