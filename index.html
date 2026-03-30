@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Intelligence Platform</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #0a0f1e; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.container { max-width: 700px; padding: 2rem; text-align: center; }
+h1 { font-size: 2.2rem; margin-bottom: 0.5rem; }
+h1 span { color: #0078d4; }
+p { color: #8b949e; margin-bottom: 3rem; font-size: 1.05rem; }
+.stages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.stage { border-radius: 12px; padding: 1.5rem; text-decoration: none; color: white; transition: transform 0.2s; display: block; }
+.stage:hover { transform: translateY(-4px); }
+.s1 { background: #0078d4; }
+.s2 { background: #161b22; border: 1px solid #30363d; }
+.s3 { background: #7c3aed; }
+.stage-num { font-size: 11px; font-weight: 700; opacity: 0.7; letter-spacing: 0.1em; margin-bottom: 8px; }
+.stage-name { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+.stage-desc { font-size: 12px; opacity: 0.8; line-height: 1.5; }
+.stage-arrow { font-size: 1.5rem; margin-top: 1rem; display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Azure <span>Intelligence</span> Platform</h1>
+  <p>Three connected products · Randi · Hajra · Kaushaya</p>
+  <div class="stages">
+    <a class="stage s1" href="stage1-contentlens.html">
+      <div class="stage-num">STAGE 1</div>
+      <div class="stage-name">ContentLens</div>
+      <div class="stage-desc">Azure Content Understanding · Extract intelligence from any content</div>
+      <span class="stage-arrow">→</span>
+    </a>
+    <a class="stage s2" href="stage2-securelink.html">
+      <div class="stage-num">STAGE 2</div>
+      <div class="stage-name">SecureLink</div>
+      <div class="stage-desc">VNet Integration · Private connectivity between CRM and Power Platform</div>
+      <span class="stage-arrow">→</span>
+    </a>
+    <a class="stage s3" href="stage3-cloudshift.html">
+      <div class="stage-num">STAGE 3</div>
+      <div class="stage-name">CloudShift</div>
+      <div class="stage-desc">Copilot App Mod · Modernise legacy apps to Azure in days</div>
+      <span class="stage-arrow">→</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>
